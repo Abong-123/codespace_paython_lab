@@ -2,6 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, Request, Form
 from sqlalchemy.orm import Session
 from database import SessionLocal, engine, get_db
 from hash import hash_password, verify_password
+from starlette.middleware.sessions import SessionMiddleware
 import models
 import schemas
 from typing import Optional
@@ -11,11 +12,18 @@ from zoneinfo import ZoneInfo
 from schemas import UserCreate, UserUpdate
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, RedirectResponse
-from starlette.middleware.Sessions import SessionMiddleware
 
 
 
 app = FastAPI()
+
+templates = Jinja2Templates(directory="templates")
+
+
+app.add_middleware(
+    SessionMiddleware,
+    secret_key = "SECRET_YANG_RAHASIA_BANGET"
+)
 
 @app.post("/users/")
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -51,6 +59,76 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
+
+@app.get("/register", response_class=HTMLResponse)
+def register_page(request: Request):
+    return templates.TemplateResponse("register.html", {"request": request})
+
+
+@app.post("/register")
+def register_user(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+
+    hashed_pw = hash_password(password)
+
+    new_user = models.User(
+        username=username, 
+        email=email,
+        password=hashed_pw
+    )
+
+    db.add(new_user)
+    db.commit()
+
+    return RedirectResponse("/login", status_code=303)
+
+@app.get("/login", response_class=HTMLResponse)
+def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@app.post("/login")
+def login_user(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    user = db.query(models.User).filter(
+        models.User.username == username
+    ).first()
+
+    if not user or not verify_password(password, user.password):
+        return RedirectResponse("/login", status_code =303)
+    
+    request.session["user_id"] = user.id
+    return RedirectResponse("/dashboard", status_code=303)
+
+
+@app.get("/dashboard", response_class=HTMLResponse)
+def dashboard(request: Request, db: Session = Depends(get_db)):
+    user_id = request.session.get("user_id")
+
+    if not user_id:
+        return RedirectResponse("/login", status_code=303)
+    
+    user = db.query(models.User).filter(
+        models.User.id == user_id
+    ).first()
+
+    return templates.TemplateResponse(
+        "dashboard.html",
+        {"request": request, "user": user}
+    )
+
+@app.get("/logout")
+def logout(request: Request):
+    request.session.clear()
+    return RedirectResponse("/login", status_code=303)
 
 @app.post("/users/{user_id}/payments/")
 def create_payment(user_id: int, payment: schemas.PaymentCreate, db: Session = Depends(get_db)):
