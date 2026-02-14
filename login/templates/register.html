@@ -1,19 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+    <title>Register - Water Payment</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <h2>Register</h2>
+    <div class="container">
+        <div class="auth-wrapper">
+            <div class="auth-card">
+                <h1 class="auth-title">Daftar Akun</h1>
+                <p class="auth-subtitle">Buat akun baru Anda</p>
 
-    <form action="/register" method="post">
-        <input type="text" name="username" placeholder="Username" required0><br>
-        <input type="email" name="email" placeholder="Email" required0><br>
-        <input type="password" name="password" placeholder="password" required0><br>
-        <button type="submit">Daftar</button>
-    </form>
-    <h4>Sudah punya akun? <span><a href="/login">Login</a></span></h4>
+                <form action="/register" method="post" class="auth-form">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input 
+                            type="text" 
+                            id="username" 
+                            name="username" 
+                            placeholder="Pilih username" 
+                            required
+                            class="form-input"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="Masukkan email" 
+                            required
+                            class="form-input"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="Buat password yang kuat" 
+                            required
+                            class="form-input"
+                        >
+                    </div>
+
+                    <button type="submit" class="btn-primary">Daftar</button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Sudah punya akun? <a href="/login" class="link">Login di sini</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

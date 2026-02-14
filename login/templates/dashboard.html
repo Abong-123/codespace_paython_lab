@@ -1,12 +1,87 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>dashoard</title>
+    <title>Dashboard - Water Payment</title>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <h2>Welcome {{ user.username }}</h2>
-    <a href="/logout">logout</a>
+    <div class="dashboard-header">
+        <div class="container">
+            <h2>Selamat Datang, {{ user.username }}</h2>
+            <p>Kelola pembayaran air Anda dengan mudah</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="dashboard-container">
+            <!-- Form Tambah Pembayaran -->
+            <div class="form-section">
+                <h3>📝 Tambah Pembayaran Baru</h3>
+                <form action="/add-payment" method="post" class="auth-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bulan">Bulan</label>
+                            <input 
+                                type="text" 
+                                id="bulan" 
+                                name="bulan" 
+                                placeholder="Contoh: Januari" 
+                                required
+                                class="form-input"
+                            >
+                        </div>
+                        <div class="form-group">
+                            <label for="amount">Jumlah (Rp)</label>
+                            <input 
+                                type="number" 
+                                id="amount" 
+                                name="amount" 
+                                placeholder="Masukkan jumlah" 
+                                required
+                                class="form-input"
+                            >
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary">Tambah Pembayaran</button>
+                </form>
+            </div>
+
+            <!-- Riwayat Pembayaran -->
+            <div class="table-section">
+                <h3>📊 Riwayat Pembayaran</h3>
+                {% if payments %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Bulan</th>
+                            <th>Jumlah (Rp)</th>
+                            <th>Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in payments %}
+                        <tr>
+                            <td>{{ payment.bulan }}</td>
+                            <td>Rp {{ "{:,.0f}".format(payment.amount) }}</td>
+                            <td>{{ payment.create_at.strftime('%d-%m-%Y') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p style="color: var(--text-light); text-align: center; padding: 2rem;">
+                    Belum ada riwayat pembayaran. Tambahkan pembayaran pertama Anda!
+                </p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Logout -->
+        <div class="logout-section">
+            <a href="/logout" class="btn-logout">🚪 Logout</a>
+        </div>
+    </div>
 </body>
 </html>

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from database import SessionLocal, engine, get_db
 from hash import hash_password, verify_password
 from starlette.middleware.sessions import SessionMiddleware
+from starlette.staticfiles import StaticFiles
 import models
 import schemas
 from typing import Optional
@@ -24,6 +25,9 @@ app.add_middleware(
     SessionMiddleware,
     secret_key = "SECRET_YANG_RAHASIA_BANGET"
 )
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.post("/users/")
 def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
@@ -114,7 +118,11 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     user_id = request.session.get("user_id")
 
     if not user_id:
-        return RedirectResponse("/login", status_code=303)
+        return RedirectResponse("/login", status_code=302)
+    
+    payments = db.query(models.WaterPayment).filter(
+        models.WaterPayment.user_id == user_id
+    ).all()
     
     user = db.query(models.User).filter(
         models.User.id == user_id
@@ -122,8 +130,30 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
 
     return templates.TemplateResponse(
         "dashboard.html",
-        {"request": request, "user": user}
+        {"request": request, "user": user, "payments": payments}
     )
+@app.post("/add-payment")
+def add_payment(
+    request: Request,
+    amount: int = Form(...),
+    bulan: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    user_id = request.session.get("user_id")
+    if not user_id:
+        return RedirectResponse("/login", status_code=302)
+
+    new_payment = models.WaterPayment(
+        bulan=bulan,
+        amount=amount,
+        user_id=user_id
+    )
+
+    db.add(new_payment)
+    db.commit()
+    db.refresh(new_payment)
+
+    return RedirectResponse("/dashboard", status_code=303)
 
 @app.get("/logout")
 def logout(request: Request):
