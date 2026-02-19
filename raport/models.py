@@ -40,3 +40,4 @@ class Grade(Base):
     score = Column(Integer, nullable=False)
 
     student = relationship("Student", back_populates="grades")
+

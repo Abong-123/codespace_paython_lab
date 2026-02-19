@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from database import get_db
-from models import User
+from models import User, Class
 from hash import hash_password, verify_password, create_access_token, get_current_user_from_cookie
 from typing import Optional
 
@@ -85,6 +85,22 @@ def register(
     db.commit()
     db.refresh(new_user)
     return RedirectResponse("/login", status_code=303)
+
+@app.post("/assign-class")
+def assign_class(
+    user_id: int = Form(...),
+    class_id: int = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_from_cookie)
+):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    user.class_id = class_id
+    db.commit()
+    return RedirectResponse("/dashboard", status_code=303)
 
 @app.get("/edit-user/{user_id}", response_class=HTMLResponse)
 def edit_user_form(
