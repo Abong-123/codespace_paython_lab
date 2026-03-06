@@ -6,6 +6,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import IntegrityError
 from starlette.middleware.sessions import SessionMiddleware
+from datetime import date, timedelta
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -111,15 +112,27 @@ def dashboard(request: Request, db: Session = Depends(get_db)):
     if "user_id" not in request.session:
         return RedirectResponse(url="/login", status_code=303)
     user_id = request.session["user_id"]
+
     user = db.query(models.User).filter(
         models.User.id == request.session["user_id"]
     ).first()
+
+    total_resep = db.query(models.Resep).filter(
+        models.Resep.user_id == user.id
+    ).count()
+
+    total_mealplan = db.query(models.MealPlan).filter(
+        models.MealPlan.user_id == user.id
+    ).count()
+
     return templates.TemplateResponse(
         "dashboard.html",
         {
             "request": request,
             "nama": request.session["user_name"],
-            "user": user
+            "user": user,
+            "total_resep": total_resep,
+            "total_mealplan": total_mealplan
         }
     )
 
@@ -250,7 +263,6 @@ def resep_list(request: Request, db: Session = Depends(get_db)):
         "request": request, "user": user, "reseps": reseps
     })
 
-
 @app.get("/resep/input", response_class=HTMLResponse)
 def resep_input_form(request: Request, db: Session = Depends(get_db)):
     if "user_id" not in request.session:
@@ -261,7 +273,6 @@ def resep_input_form(request: Request, db: Session = Depends(get_db)):
     return templates.TemplateResponse("resep_input.html", {
         "request": request, "user": user, "nutrisis": nutrisis
     })
-
 
 @app.post("/resep/input")
 async def resep_input(
@@ -457,6 +468,97 @@ def resep_delete(id: int, request: Request, db: Session = Depends(get_db)):
     db.delete(resep)
     db.commit()
     return RedirectResponse(url="/resep", status_code=303)
+
+@app.get("/mealplan", response_class=HTMLResponse)
+def mealplan(request: Request, db: Session = Depends(get_db)):
+    if "user_id" not in request.session:
+        return RedirectResponse(url="/login", status_code=303)
+    user = db.query(models.User).filter(models.User.id == request.session["user_id"]).first()
+
+    # 7 hari mulai hari ini
+    today = date.today()
+    week = [today + timedelta(days=i) for i in range(7)]
+
+    # Ambil mealplan user untuk minggu ini
+    plans = db.query(models.MealPlan).filter(
+        models.MealPlan.user_id == user.id,
+        models.MealPlan.tanggal >= week[0],
+        models.MealPlan.tanggal <= week[-1]
+    ).all()
+
+    # Susun jadi dict {tanggal: {meal_type: plan}}
+    # Susun plan_map dengan key string
+    plan_map = {}
+    for p in plans:
+        key = p.tanggal.strftime("%Y-%m-%d")  # ← pastikan format sama
+        if key not in plan_map:
+            plan_map[key] = {}
+        plan_map[key][p.meal_type.value] = p
+
+    # Kirim week sebagai list of dict
+    week_data = [
+        {
+            "date": today + timedelta(days=i),
+            "key": (today + timedelta(days=i)).strftime("%Y-%m-%d")
+        }
+        for i in range(7)
+    ]
+
+    reseps = db.query(models.Resep).order_by(models.Resep.nama).all()
+
+    return templates.TemplateResponse("mealplan.html", {
+        "request": request,
+        "user": user,
+        "week": week_data,      # ← pakai week_data
+        "plan_map": plan_map,
+        "today": today,
+        "reseps": reseps
+    })
+
+@app.post("/mealplan/add")
+def mealplan_add(
+    request: Request,
+    resep_id: int = Form(...),
+    tanggal: str = Form(...),
+    meal_type: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    if "user_id" not in request.session:
+        return RedirectResponse(url="/login", status_code=303)
+
+    # Cek sudah ada atau belum, kalau ada replace
+    existing = db.query(models.MealPlan).filter(
+        models.MealPlan.user_id == request.session["user_id"],
+        models.MealPlan.tanggal == tanggal,
+        models.MealPlan.meal_type == models.MealType[meal_type]
+    ).first()
+
+    if existing:
+        existing.resep_id = resep_id
+    else:
+        plan = models.MealPlan(
+            user_id=request.session["user_id"],
+            resep_id=resep_id,
+            tanggal=tanggal,
+            meal_type=models.MealType[meal_type]
+        )
+        db.add(plan)
+
+    db.commit()
+    return RedirectResponse(url="/mealplan", status_code=303)
+
+@app.post("/mealplan/delete/{plan_id}")
+def mealplan_delete(plan_id: int, request: Request, db: Session = Depends(get_db)):
+    if "user_id" not in request.session:
+        return RedirectResponse(url="/login", status_code=303)
+    plan = db.query(models.MealPlan).filter(
+        models.MealPlan.id == plan_id,
+        models.MealPlan.user_id == request.session["user_id"]
+    ).first()
+    if plan:
+        db.delete(plan)
+        db.commit()
+    return RedirectResponse(url="/mealplan", status_code=303)
 
 @app.get("/nutrisi/input", response_class=HTMLResponse)
 def nutrisi_input_form(request: Request, db: Session = Depends(get_db)):
