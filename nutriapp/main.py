@@ -17,12 +17,13 @@ import shutil
 #------------------------------- import models and schemas -----------------------------------#
 import models
 import schemas
-from database import SessionLocal, engine, get_db
+from database import SessionLocal, engine, get_db, Base
 from datetime import datetime, date
 from typing import List
 from security import hash_password, verify_password
 
 #------------------------------- settings -----------------------------------#
+Base.metadata.create_all(bind=engine, checkfirst=True)
 app = FastAPI()
 app.add_middleware(
     SessionMiddleware,
