@@ -1520,38 +1520,31 @@ def render_raport_html(nama, murid, kelas, kurikulum, raports,
         bawah_kkm = r.nilai_akhir is not None and r.nilai_akhir < mapel.kkm
  
         rows += f"""
-        <tr style="background:{row_bg}">
-          <td style="text-align:center;color:#9ca3af;font-size:10px">{nomor}</td>
-          <td>
-            <span style="font-weight:600;font-size:11px">{mapel.nama_mapel}</span>
-            <span style="display:block;font-size:9px;color:#9ca3af;margin-top:1px">{mapel.kode_mapel}</span>
-          </td>
-          <td style="text-align:center">
-            <span style="background:{kat_bg};color:{kat_color};padding:2px 7px;border-radius:10px;font-size:9px;font-weight:600;white-space:nowrap">
-              {kat_label}
-            </span>
-          </td>
-          <td style="text-align:center;color:#6b7280;font-size:10px">{mapel.kkm}</td>
-          <td style="text-align:center;font-weight:600;font-size:11px">
-            {r.nilai_pengetahuan if r.nilai_pengetahuan is not None else '—'}
-          </td>
-          <td style="text-align:center;font-weight:600;font-size:11px">
-            {r.nilai_keterampilan if r.nilai_keterampilan is not None else '—'}
-          </td>
-          <td style="text-align:center;font-size:12px;font-weight:700;{'color:#dc2626;' if bawah_kkm else 'color:#111827;'}">
-            {r.nilai_akhir if r.nilai_akhir is not None else '—'}
-          </td>
-          <td style="text-align:center">
-            <span style="background:{pb};color:{pc};padding:2px 9px;border-radius:10px;font-weight:700;font-size:10px">
-              {r.predikat or '—'}
-            </span>
-          </td>
-          <td style="font-size:10px;color:#6b7280;line-height:1.4">{r.deskripsi or '—'}</td>
-        </tr>"""
+        <tr class="row {'row-danger' if r.predikat == 'E' else ''}">
+        <td class="center no">{nomor}</td>
+        <td class="mapel">
+            <div class="mapel-nama">{mapel.nama_mapel}</div>
+            <div class="mapel-kode">{mapel.kode_mapel}</div>
+        </td>
+        <td class="center">
+            <span class="badge kategori">{kat_label}</span>
+        </td>
+        <td class="center muted">{mapel.kkm}</td>
+        <td class="center nilai">{r.nilai_pengetahuan or '—'}</td>
+        <td class="center nilai">{r.nilai_keterampilan or '—'}</td>
+        <td class="center nilai-akhir {'danger' if bawah_kkm else ''}">
+            {r.nilai_akhir or '—'}
+        </td>
+        <td class="center">
+            <span class="badge predikat">{r.predikat or '—'}</span>
+        </td>
+        <td class="deskripsi">{r.deskripsi or '—'}</td>
+        </tr>
+        """
  
-    # Presensi — nama variabel berbeda supaya tidak bentrok dengan loop
+    # Presensi
     s_val = presensi.sakit if presensi else 0
-    i_val = presensi.izin  if presensi else 0
+    i_val = presensi.izin if presensi else 0
     a_val = presensi.alpha if presensi else 0
     t_val = s_val + i_val + a_val
  
@@ -1562,313 +1555,267 @@ def render_raport_html(nama, murid, kelas, kurikulum, raports,
             pred_e = ne.nilai or "—"
             ekskul_rows += f"""
             <tr>
-              <td style="font-weight:500;font-size:10px">{ne.ekskul.nama_ekskul}</td>
-              <td style="text-align:center;font-weight:700;font-size:11px">{pred_e}</td>
-              <td style="font-size:10px;color:#6b7280">{ne.deskripsi or '—'}</td>
+              <td style="font-weight:500;font-size:10px;padding:6px 8px">{ne.ekskul.nama_ekskul}</td>
+              <td class="center" style="font-weight:700;font-size:11px;width:60px">{pred_e}</td>
+              <td style="font-size:10px;color:#6b7280;padding:6px 8px">{ne.deskripsi or '—'}</td>
             </tr>"""
     else:
-        ekskul_rows = '<tr><td colspan="3" style="text-align:center;color:#9ca3af;font-size:10px;padding:12px">Tidak mengikuti ekstrakulikuler</td></tr>'
+        ekskul_rows = '<tr><td colspan="3" style="text-align:center;color:#9ca3af;font-size:10px;padding:16px">Tidak mengikuti ekstrakulikuler</td></tr>'
  
     wali_nama = kelas.wali_kelas.nama if kelas.wali_kelas else "_________________________"
-    wali_nip  = f"NIP. {kelas.wali_kelas.nip_nis}" if kelas.wali_kelas and kelas.wali_kelas.nip_nis else ""
+    wali_nip = f"NIP. {kelas.wali_kelas.nip_nis}" if kelas.wali_kelas and kelas.wali_kelas.nip_nis else ""
  
     status_class = "status-naik" if naik_kelas else "status-tinggal"
-    status_text  = "✓  NAIK KELAS" if naik_kelas else "✗  TIDAK NAIK KELAS"
-    e_color      = "#dc2626" if jumlah_e > 0 else "#059669"
+    status_text = "✓ NAIK KELAS" if naik_kelas else "✗ TIDAK NAIK KELAS"
+    e_color = "#dc2626" if jumlah_e > 0 else "#059669"
  
     return f"""<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Raport {nama} — {tahun} {semester}</title>
+<title>Rapor {nama} — {tahun} {semester}</title>
 <style>
-  * {{ margin:0; padding:0; box-sizing:border-box; }}
- 
   @page {{
     size: A4;
-    margin: 1.8cm 1.5cm;
+    margin: 1.2cm;
   }}
- 
+
   body {{
     font-family: Arial, Helvetica, sans-serif;
-    font-size: 11px;
+    font-size: 10.5px;
     color: #1f2937;
-    background: #fff;
-    line-height: 1.5;
+    line-height: 1.4;
   }}
- 
-  /* ── KOP ── */
+
+  .center {{ text-align: center; }}
+  .muted {{ color: #6b7280; }}
+
+  /* KOP */
   .kop {{
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding-bottom: 14px;
-    border-bottom: 3px solid #1e293b;
-    margin-bottom: 16px;
-  }}
-  .kop-logo {{
-    width: 60px; height: 60px;
-    border: 2px solid #1e293b;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 22px; font-weight: 900; color: #1e293b;
-    flex-shrink: 0;
-  }}
-  .kop-text {{ flex: 1; }}
-  .kop-text .nama-sekolah {{
-    font-size: 17px; font-weight: 800;
-    letter-spacing: .5px; color: #1e293b;
-  }}
-  .kop-text .sub {{ font-size: 10px; color: #6b7280; margin-top: 2px; }}
-  .kop-badge {{
-    background: #1e293b; color: #fff;
-    padding: 6px 14px; border-radius: 6px;
-    font-size: 10px; font-weight: 700;
-    text-align: center; line-height: 1.6;
-    flex-shrink: 0;
-  }}
- 
-  /* ── JUDUL DOKUMEN ── */
-  .judul-dokumen {{
     text-align: center;
-    margin: 14px 0 12px;
+    border-bottom: 2px solid #f97316;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
   }}
-  .judul-dokumen h2 {{
-    font-size: 14px; font-weight: 800;
-    letter-spacing: 2px; text-transform: uppercase;
-    color: #1e293b;
+  .kop h1 {{ font-size: 16px; margin: 0; }}
+  .kop h2 {{ font-size: 12px; margin: 0; }}
+  .kop .alamat {{ font-size: 9px; color: #6b7280; }}
+
+  /* JUDUL */
+  .judul {{
+    text-align: center;
+    margin: 10px 0;
   }}
-  .judul-dokumen .sub {{
-    font-size: 10px; color: #6b7280; margin-top: 3px;
+  .badge-title {{
+    background: #f97316;
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 11px;
   }}
- 
-  /* ── INFO SISWA ── */
-  .info-box {{
-    display: flex; gap: 0;
+  .periode {{
+    font-size: 9px;
+    color: #6b7280;
+    margin-top: 3px;
+  }}
+
+  /* INFO */
+  .info-siswa {{
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 10px;
+  }}
+  .info-siswa td {{
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden;
-    margin-bottom: 16px;
+    padding: 4px 6px;
   }}
-  .info-col {{
-    flex: 1;
-    padding: 10px 14px;
+  .info-siswa .label {{
+    width: 110px;
+    background: #fef3c7;
+    font-weight: 600;
   }}
-  .info-col:first-child {{
-    border-right: 1px solid #e5e7eb;
-  }}
-  .info-row {{
-    display: flex; gap: 6px;
-    padding: 3px 0;
-    font-size: 10px;
-  }}
-  .info-row .lbl {{
-    min-width: 90px; color: #6b7280; font-weight: 500;
-  }}
-  .info-row .val {{ font-weight: 700; color: #111827; }}
- 
-  /* ── TABEL NILAI ── */
+
+  /* TABEL NILAI */
   .tabel-nilai {{
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 0;
-    font-size: 10px;
-  }}
-  .tabel-nilai thead tr {{
-    background: #1e293b;
+    table-layout: fixed;
   }}
   .tabel-nilai th {{
-    padding: 8px 7px;
-    color: #f1f5f9;
-    font-weight: 600;
+    background: #f97316;
+    color: #fff;
+    padding: 5px;
     font-size: 10px;
-    text-align: center;
-    border: 1px solid #334155;
+    border: 1px solid #e5e7eb;
   }}
-  .tabel-nilai th:nth-child(2) {{ text-align: left; }}
   .tabel-nilai td {{
-    padding: 6px 7px;
+    padding: 5px;
     border: 1px solid #e5e7eb;
-    vertical-align: middle;
+    vertical-align: top;
   }}
-  .tabel-nilai tbody tr:nth-child(even) td {{
-    background: #f9fafb;
+
+  .tabel-nilai th:nth-child(1) {{ width: 30px; }}
+  .tabel-nilai th:nth-child(3) {{ width: 60px; }}
+  .tabel-nilai th:nth-child(4) {{ width: 40px; }}
+  .tabel-nilai th:nth-child(5),
+  .tabel-nilai th:nth-child(6),
+  .tabel-nilai th:nth-child(7) {{ width: 65px; }}
+  .tabel-nilai th:nth-child(8) {{ width: 50px; }}
+
+  /* ROW */
+  .row:nth-child(even) {{ background: #f9fafb; }}
+  .row-danger {{ background: #fef2f2; }}
+
+  /* MAPEL */
+  .mapel-nama {{
+    font-weight: 600;
+    font-size: 10.5px;
   }}
-  .tabel-nilai tbody tr:hover td {{
-    background: #f0f9ff;
+  .mapel-kode {{
+    font-size: 9px;
+    color: #9ca3af;
   }}
- 
-  /* ── SECTION HEADING ── */
-  .section-heading {{
-    font-size: 10px; font-weight: 700;
-    text-transform: uppercase; letter-spacing: 1px;
-    color: #fff; background: #1e293b;
-    padding: 5px 10px;
-    margin: 0 0 0 0;
+
+  /* BADGE */
+  .badge {{
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: bold;
+    background: #e5e7eb;
   }}
- 
-  /* ── PRESENSI ── */
-  .presensi-wrap {{
+  .predikat {{
+    background: #dbeafe;
+  }}
+
+  /* NILAI */
+  .nilai {{ font-weight: 600; }}
+  .nilai-akhir {{ font-weight: bold; }}
+  .danger {{ color: #dc2626; }}
+
+  /* DESKRIPSI */
+  .deskripsi {{
+    font-size: 9.5px;
+    color: #4b5563;
+    line-height: 1.3;
+  }}
+
+  /* SECTION */
+  .section-header {{
+    background: #f97316;
+    color: #fff;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: bold;
+    margin-top: 10px;
+  }}
+
+  /* PRESENSI */
+  .presensi-grid {{
     display: flex;
-    border: 1px solid #e5e7eb;
-    border-top: none;
-    border-radius: 0 0 6px 6px;
-    overflow: hidden;
+    gap: 6px;
+    margin-top: 6px;
   }}
-  .presensi-cell {{
+  .presensi-item {{
     flex: 1;
     text-align: center;
-    padding: 10px 6px;
-    border-right: 1px solid #e5e7eb;
+    padding: 6px;
+    border: 1px solid #e5e7eb;
   }}
-  .presensi-cell:last-child {{ border-right: none; }}
   .presensi-angka {{
-    font-size: 22px; font-weight: 800; line-height: 1;
+    font-size: 18px;
+    font-weight: bold;
   }}
-  .presensi-keterangan {{ font-size: 9px; color: #6b7280; margin-top: 3px; }}
-  .sakit  {{ color: #b45309; background: #fffbeb; }}
-  .izin   {{ color: #1d4ed8; background: #eff6ff; }}
-  .alpha  {{ color: #dc2626; background: #fef2f2; }}
-  .total  {{ color: #374151; background: #f9fafb; }}
- 
-  /* ── EKSKUL TABLE ── */
+  .presensi-label {{
+    font-size: 9px;
+  }}
+
+  /* EKSKUL */
   .tabel-ekskul {{
     width: 100%;
     border-collapse: collapse;
-    font-size: 10px;
-    border: 1px solid #e5e7eb;
-    border-top: none;
   }}
+  .tabel-ekskul th,
   .tabel-ekskul td {{
-    padding: 6px 10px;
-    border-bottom: 1px solid #f3f4f6;
-    vertical-align: middle;
-  }}
-  .tabel-ekskul tr:last-child td {{ border-bottom: none; }}
- 
-  /* ── STATISTIK ── */
-  .statistik-wrap {{
-    display: flex;
     border: 1px solid #e5e7eb;
-    border-radius: 8px;
-    overflow: hidden;
+    padding: 5px;
   }}
-  .stat-cell {{
-    flex: 1;
-    text-align: center;
-    padding: 12px 8px;
-    border-right: 1px solid #e5e7eb;
-    background: #f9fafb;
-  }}
-  .stat-cell:last-child {{ border-right: none; }}
-  .stat-angka {{ font-size: 22px; font-weight: 800; color: #111827; }}
-  .stat-label {{ font-size: 9px; color: #9ca3af; text-transform: uppercase; margin-top: 2px; }}
- 
-  /* ── STATUS KENAIKAN ── */
-  .status-naik {{
-    background: #ecfdf5; border: 1.5px solid #6ee7b7;
-    color: #065f46; padding: 10px 0;
-    text-align: center; font-weight: 800;
-    font-size: 13px; letter-spacing: 1px;
-    border-radius: 8px;
-  }}
-  .status-tinggal {{
-    background: #fef2f2; border: 1.5px solid #fca5a5;
-    color: #991b1b; padding: 10px 0;
-    text-align: center; font-weight: 800;
-    font-size: 13px; letter-spacing: 1px;
-    border-radius: 8px;
-  }}
- 
-  /* ── CATATAN ── */
-  .catatan {{
-    background: #fffbeb; border: 1px solid #fde68a;
-    border-radius: 6px; padding: 8px 12px;
-    font-size: 9px; color: #6b7280; line-height: 1.8;
-  }}
- 
-  /* ── TTD ── */
-  .ttd-wrap {{
+
+  /* TTD */
+  .ttd-grid {{
     display: flex;
     justify-content: space-between;
-    gap: 16px;
+    margin-top: 16px;
   }}
   .ttd-box {{
-    flex: 1; text-align: center;
+    width: 30%;
+    text-align: center;
   }}
-  .ttd-kota {{
-    font-size: 10px; color: #6b7280; margin-bottom: 40px;
+  .ttd-label {{
+    font-size: 9px;
+    margin-bottom: 30px;
   }}
   .ttd-garis {{
-    border-top: 1px solid #374151;
-    padding-top: 5px;
-    font-weight: 700; font-size: 11px;
-    color: #111827;
+    border-top: 1px solid #000;
+    padding-top: 4px;
+    font-weight: bold;
   }}
-  .ttd-nip {{ font-size: 9px; color: #9ca3af; margin-top: 2px; }}
- 
-  /* ── DIVIDER ── */
-  .divider {{ margin: 16px 0; border: none; border-top: 1px dashed #d1d5db; }}
- 
-  /* ── PAGE BREAK ── */
-  .halaman-2 {{ page-break-before: always; padding-top: 4px; }}
- 
-  /* ── FOOTER ── */
-  .footer {{
-    text-align: center; font-size: 8px; color: #9ca3af;
-    border-top: 1px solid #e5e7eb; padding-top: 8px;
-    margin-top: 20px;
+
+  @media print {{
+    body {{ margin: 0; }}
+    .page-break {{ page-break-before: always; }}
   }}
 </style>
 </head>
 <body>
- 
-<!-- ═══════════════ HALAMAN 1 ═══════════════ -->
- 
-<!-- Kop Sekolah -->
+
+<!-- HALAMAN 1 -->
 <div class="kop">
-  <div class="kop-logo">S</div>
-  <div class="kop-text">
-    <div class="nama-sekolah">SMK NEGERI 1 CONTOH</div>
-    <div class="sub">Jl. Pendidikan No. 1, Kota Contoh — Telp. (021) 000-0000 — smkn1contoh@sch.id</div>
-  </div>
-  <div class="kop-badge">
-    RAPORT<br>SISWA<br>{tahun[:4]}
-  </div>
+  <h1>PEMERINTAH PROVINSI CONTOH</h1>
+  <h2>DINAS PENDIDIKAN</h2>
+  <h1>SMK NEGERI 1 CONTOH</h1>
+  <div class="alamat">Jl. Pendidikan No. 1, Kota Contoh | Telp. (021) 1234567 | www.smkbinabangsa.sch.id</div>
 </div>
- 
-<!-- Judul -->
-<div class="judul-dokumen">
-  <h2>Laporan Hasil Belajar Siswa</h2>
-  <div class="sub">Tahun Ajaran {tahun} &nbsp;|&nbsp; Semester {semester}</div>
+
+<div class="judul">
+  <div class="badge">LAPORAN HASIL BELAJAR SISWA (RAPOR)</div>
+  <div class="periode">Tahun Ajaran {tahun} | Semester {semester}</div>
 </div>
- 
-<!-- Info Siswa -->
-<div class="info-box">
-  <div class="info-col">
-    <div class="info-row"><span class="lbl">Nama Siswa</span><span class="val">{nama}</span></div>
-    <div class="info-row"><span class="lbl">NIS / NISN</span><span class="val">{murid.nip_nis or '—'}</span></div>
-    <div class="info-row"><span class="lbl">Kelas</span><span class="val">{kelas.tingkat} — {kelas.jurusan} — {kelas.nama_kelas}</span></div>
-  </div>
-  <div class="info-col">
-    <div class="info-row"><span class="lbl">Kurikulum</span><span class="val">{kurikulum.nama_kurikulum}</span></div>
-    <div class="info-row"><span class="lbl">Wali Kelas</span><span class="val">{wali_nama}</span></div>
-    <div class="info-row"><span class="lbl">Tanggal Cetak</span><span class="val">{date.today().strftime('%d %B %Y')}</span></div>
-  </div>
-</div>
- 
-<!-- Tabel Nilai -->
+
+<table class="info-siswa">
+  <tr>
+    <td class="label">Nama Peserta Didik</td>
+    <td><strong>{nama}</strong></td>
+    <td class="label">NIS / NISN</td>
+    <td>{murid.nip_nis or '—'}</td>
+  </tr>
+  <tr>
+    <td class="label">Kelas</td>
+    <td>{kelas.tingkat} — {kelas.jurusan} — {kelas.nama_kelas}</td>
+    <td class="label">Kurikulum</td>
+    <td>{kurikulum.nama_kurikulum}</td>
+  </tr>
+  <tr>
+    <td class="label">Wali Kelas</td>
+    <td>{wali_nama}</td>
+    <td class="label">Tanggal Cetak</td>
+    <td>{date.today().strftime('%d %B %Y')}</td>
+  </tr>
+</table>
+
 <table class="tabel-nilai">
   <thead>
     <tr>
-      <th style="width:28px">#</th>
-      <th style="text-align:left;min-width:130px">Mata Pelajaran</th>
-      <th style="width:60px">Kategori</th>
-      <th style="width:36px">KKM</th>
-      <th style="width:68px">Pengetahuan</th>
-      <th style="width:72px">Keterampilan</th>
-      <th style="width:60px">Nilai Akhir</th>
-      <th style="width:52px">Predikat</th>
+      <th>No</th>
+      <th>Mata Pelajaran</th>
+      <th style="width:55px">Kategori</th>
+      <th style="width:32px">KKM</th>
+      <th style="width:60px">Pengetahuan</th>
+      <th style="width:65px">Keterampilan</th>
+      <th style="width:55px">Nilai Akhir</th>
+      <th style="width:45px">Predikat</th>
       <th>Deskripsi</th>
     </tr>
   </thead>
@@ -1876,115 +1823,105 @@ def render_raport_html(nama, murid, kelas, kurikulum, raports,
     {rows}
   </tbody>
 </table>
- 
-<!-- ═══════════════ HALAMAN 2 ═══════════════ -->
-<div class="halaman-2">
- 
-  <!-- Judul halaman 2 -->
-  <div class="judul-dokumen" style="margin-bottom:14px">
-    <h2>Lampiran Raport</h2>
-    <div class="sub">{nama} &nbsp;|&nbsp; Tahun Ajaran {tahun} &nbsp;|&nbsp; Semester {semester}</div>
+
+<!-- HALAMAN 2 -->
+<div class="page-break"></div>
+
+<div class="judul">
+  <div class="badge">LAMPIRAN RAPORT</div>
+  <div class="periode">{nama} | Tahun Ajaran {tahun} | Semester {semester}</div>
+</div>
+
+<div class="section-header">📊 REKAP KEHADIRAN</div>
+<div class="presensi-grid">
+  <div class="presensi-item presensi-sakit">
+    <div class="presensi-angka">{s_val}</div>
+    <div class="presensi-label">Sakit</div>
   </div>
- 
-  <!-- Presensi + Ekskul berdampingan -->
-  <table style="width:100%;border-collapse:collapse;margin-bottom:16px">
-    <tr style="vertical-align:top">
- 
-      <!-- Presensi -->
-      <td style="width:48%;padding-right:10px">
-        <div class="section-heading" style="border-radius:6px 6px 0 0">Rekap Kehadiran</div>
-        <div class="presensi-wrap">
-          <div class="presensi-cell sakit">
-            <div class="presensi-angka">{s_val}</div>
-            <div class="presensi-keterangan">Sakit</div>
-          </div>
-          <div class="presensi-cell izin">
-            <div class="presensi-angka">{i_val}</div>
-            <div class="presensi-keterangan">Izin</div>
-          </div>
-          <div class="presensi-cell alpha">
-            <div class="presensi-angka">{a_val}</div>
-            <div class="presensi-keterangan">Alpha</div>
-          </div>
-          <div class="presensi-cell total">
-            <div class="presensi-angka">{t_val}</div>
-            <div class="presensi-keterangan">Total</div>
-          </div>
-        </div>
-      </td>
- 
-      <!-- Ekskul -->
-      <td style="width:52%;padding-left:10px">
-        <div class="section-heading" style="border-radius:6px 6px 0 0">Ekstrakulikuler</div>
-        <table class="tabel-ekskul">
-          <tbody>
-            {ekskul_rows}
-          </tbody>
-        </table>
-      </td>
- 
-    </tr>
-  </table>
- 
-  <!-- Statistik -->
-  <div class="statistik-wrap" style="margin-bottom:14px">
-    <div class="stat-cell">
-      <div class="stat-angka">{rata_rata}</div>
-      <div class="stat-label">Rata-rata</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-angka" style="color:{e_color}">{jumlah_e}</div>
-      <div class="stat-label">Nilai E</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-angka">{len(raports)}</div>
-      <div class="stat-label">Total Mapel</div>
-    </div>
-    <div class="stat-cell">
-      <div class="stat-angka">{t_val}</div>
-      <div class="stat-label">Total Absen</div>
-    </div>
+  <div class="presensi-item presensi-izin">
+    <div class="presensi-angka">{i_val}</div>
+    <div class="presensi-label">Izin</div>
   </div>
- 
-  <!-- Status Kenaikan -->
-  <div class="{status_class}" style="margin-bottom:14px">
-    {status_text}
+  <div class="presensi-item presensi-alpha">
+    <div class="presensi-angka">{a_val}</div>
+    <div class="presensi-label">Alpha</div>
   </div>
- 
-  <!-- Catatan -->
-  <div class="catatan" style="margin-bottom:20px">
-    <strong>Keterangan Predikat:</strong> &nbsp;
-    A = Sangat Baik (≥90) &nbsp;|&nbsp;
-    B = Baik (80–89) &nbsp;|&nbsp;
-    C = Cukup (70–79) &nbsp;|&nbsp;
-    D = Kurang (KKM–69) &nbsp;|&nbsp;
-    E = Sangat Kurang (di bawah KKM) <br>
-    Siswa dinyatakan naik kelas apabila tidak terdapat nilai E pada seluruh mata pelajaran.
-  </div>
- 
-  <!-- Tanda Tangan -->
-  <div class="ttd-wrap">
-    <div class="ttd-box">
-      <div class="ttd-kota">Orang Tua / Wali Murid,</div>
-      <div class="ttd-garis">_________________________</div>
-      <div class="ttd-nip">&nbsp;</div>
-    </div>
-    <div class="ttd-box">
-      <div class="ttd-kota">Wali Kelas,</div>
-      <div class="ttd-garis">{wali_nama}</div>
-      <div class="ttd-nip">{wali_nip}</div>
-    </div>
-    <div class="ttd-box">
-      <div class="ttd-kota">Kepala Sekolah,</div>
-      <div class="ttd-garis">_________________________</div>
-      <div class="ttd-nip">&nbsp;</div>
-    </div>
-  </div>
- 
-  <div class="footer">
-    Dokumen resmi dicetak dari Sistem Informasi Raport &nbsp;|&nbsp; {date.today().strftime('%d %B %Y')}
+  <div class="presensi-item presensi-total">
+    <div class="presensi-angka">{t_val}</div>
+    <div class="presensi-label">Total</div>
   </div>
 </div>
+
+<div class="section-header">🎯 EKSTRAKULIKULER</div>
+<table class="tabel-ekskul">
+  <thead>
+    <tr>
+      <th>Kegiatan</th>
+      <th style="width:60px;text-align:center">Nilai</th>
+      <th>Keterangan</th>
+    </tr>
+  </thead>
+  <tbody>
+    {ekskul_rows}
+  </tbody>
+</table>
+
+<div class="section-header">📈 STATISTIK NILAI</div>
+<div class="statistik-grid">
+  <div class="stat-item">
+    <div class="stat-angka">{rata_rata}</div>
+    <div class="stat-label">Rata-rata</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-angka" style="color:{e_color}">{jumlah_e}</div>
+    <div class="stat-label">Nilai E</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-angka">{len(raports)}</div>
+    <div class="stat-label">Total Mapel</div>
+  </div>
+  <div class="stat-item">
+    <div class="stat-angka">{t_val}</div>
+    <div class="stat-label">Total Absen</div>
+  </div>
+</div>
+
+<div class="{status_class}">
+  {status_text}
+</div>
+
+<div class="catatan">
+  <strong>📌 Keterangan Predikat:</strong><br>
+  A = Sangat Baik (90-100) &nbsp;|&nbsp;
+  B = Baik (80-89) &nbsp;|&nbsp;
+  C = Cukup (70-79) &nbsp;|&nbsp;
+  D = Kurang (KKM-69) &nbsp;|&nbsp;
+  E = Sangat Kurang (&lt; KKM)<br>
+  <strong>Catatan:</strong> Siswa dinyatakan naik kelas jika tidak memiliki nilai E pada seluruh mata pelajaran.
+</div>
+
+<div class="ttd-grid">
+  <div class="ttd-box">
+    <div class="ttd-label">Orang Tua / Wali Murid</div>
+    <div class="ttd-garis">_________________________</div>
+    <div class="ttd-nip">&nbsp;</div>
+  </div>
+  <div class="ttd-box">
+    <div class="ttd-label">Wali Kelas</div>
+    <div class="ttd-garis">{wali_nama}</div>
+    <div class="ttd-nip">{wali_nip}</div>
+  </div>
+  <div class="ttd-box">
+    <div class="ttd-label">Kepala Sekolah</div>
+    <div class="ttd-garis">Drs. Ahmad Fauzi, M.Pd.</div>
+    <div class="ttd-nip">NIP. 19651231 199103 1 001</div>
+  </div>
+</div>
+
+<div class="footer">
+  Dokumen resmi dicetak dari Sistem Informasi Raport | {date.today().strftime('%d %B %Y')}
+</div>
+
 </body>
 </html>"""
 
